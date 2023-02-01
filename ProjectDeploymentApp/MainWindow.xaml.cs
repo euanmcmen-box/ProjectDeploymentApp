@@ -1,18 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ProjectDeploymentApp;
 
@@ -21,9 +11,8 @@ namespace ProjectDeploymentApp;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private const string GitRootUrl = "https://github.com/euanmcmen-box/"; 
-    //"https://github.com/allocine/";
-
+    private const string GitRootUrl = "https://github.com/allocine/"; //"https://github.com/euanmcmen-box/"; 
+    
     public List<DeploymentApplication> DeploymentApplications { get; }
 
     public MainWindow()
@@ -32,7 +21,7 @@ public partial class MainWindow : Window
 
         DeploymentApplications = new List<DeploymentApplication>()
         {
-            new("Hello Planet", "HelloPlanet", "feature/use-venus", "master", "master", true),
+            //new("Hello Planet", "HelloPlanet", "feature/use-venus", "master", "master", true),
             new("Banshee", "gla-Banshee", "dev", "uat", "main"),
             new("Boost", "gla-BoostTicketing", "dev", "uat", "master", false),
             new("Cyclops", "gla-Cyclops", string.Empty, "uat", "main"),
