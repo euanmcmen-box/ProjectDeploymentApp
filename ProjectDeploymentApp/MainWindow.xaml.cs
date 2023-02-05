@@ -69,6 +69,7 @@ public partial class MainWindow : Window
             deploymentLogSb.AppendLine(deploymentApplication.Name);
             deploymentLogSb.AppendLine($"PR URL? - {outputLog}");
             deploymentLogSb.AppendLine($"Errors? - {outputErrorLog}");
+            deploymentLogSb.AppendLine();
         }
 
         TbLog.Text = deploymentLogSb.ToString();
