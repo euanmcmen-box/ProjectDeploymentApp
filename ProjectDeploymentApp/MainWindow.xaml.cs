@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
@@ -16,11 +18,11 @@ public partial class MainWindow : Window
 {
     private const string GitRootUrl = "https://github.com/euanmcmen-box/"; // "https://github.com/allocine/";
     
-    public List<DeploymentApplication> DeploymentApplications { get; }
+    public bool PreviewPullRequests { get; set; }
 
-    private bool previewPullRequests;
+    public List<DeploymentApplication> DeploymentApplications { get; } = new();
 
-    private string githubToken = default!;
+    private string githubToken = string.Empty;
 
     public MainWindow()
     {
@@ -28,7 +30,9 @@ public partial class MainWindow : Window
 
         ReadFromConfiguration();
 
-        DeploymentApplications = new List<DeploymentApplication>()
+        PreviewPullRequests = true;
+
+        DeploymentApplications.AddRange(new List<DeploymentApplication>()
         {
             new("Hello Planet", "HelloPlanet", "feature/use-venus", "master", "master", true),
             new("Banshee", "gla-Banshee", "dev", "uat", "main"),
@@ -37,25 +41,56 @@ public partial class MainWindow : Window
             new("Cypher", "gla-Cypher-API", "dev", "uat", "master", false),
             new("Iceman", "gla-Iceman", "dev", "uat", "master"),
             new("Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master")
-        };
+        });
 
         CbDeploymentEnvironmentTarget.ItemsSource = Enum.GetValues<DeploymentEnvironmentTarget>();
         CbDeploymentEnvironmentTarget.SelectedIndex = 0;
 
-        LbApplications.ItemsSource = DeploymentApplications;
     }
 
     private void ReadFromConfiguration()
     {
-        githubToken = ConfigurationManager.AppSettings["GITHUB_SSH_KEY"] ??
-                      throw new InvalidOperationException("GITHUB_SSH_KEY is not set in the application config.");
+        TrySetFromEnvironmentVariables();
 
-        previewPullRequests = bool.TryParse(ConfigurationManager.AppSettings["PREVIEW_PULL_REQUESTS"], out var settingValue) && settingValue;
+        if (!string.IsNullOrEmpty(githubToken))
+        {
+            LblGithubTokenStatus.Content = "Set in Environment Variables";
+            return;
+        }
+
+        TrySetFromConfig();
+
+        if (!string.IsNullOrEmpty(githubToken))
+        {
+            LblGithubTokenStatus.Content = "Set in App Config";
+            return;
+        }
+
+        LblGithubTokenStatus.Content = "NOT SET";
+
+        void TrySetFromEnvironmentVariables()
+        {
+            var ghTokenEnvironmentVariable = Environment.GetEnvironmentVariable("GH_TOKEN");
+            var githubTokenEnvironmentVariable = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+
+            if (!string.IsNullOrEmpty(ghTokenEnvironmentVariable))
+                githubToken = ghTokenEnvironmentVariable;
+
+            if (!string.IsNullOrEmpty(githubTokenEnvironmentVariable))
+                githubToken = githubTokenEnvironmentVariable;
+        }
+
+        void TrySetFromConfig()
+        {
+            githubToken = ConfigurationManager.AppSettings["GITHUB_TOKEN"] ?? string.Empty;
+        }
     }
 
     private void BtnCreatePullRequests_OnClick(object sender, RoutedEventArgs e)
     {
         var deploymentLogSb = new StringBuilder();
+        var deploymentErrorLogSb = new StringBuilder();
+
         var selectedDeploymentEnvironmentTarget = (DeploymentEnvironmentTarget)CbDeploymentEnvironmentTarget.SelectedIndex;
 
         var selectedDeploymentApplications = DeploymentApplications
@@ -66,18 +101,26 @@ public partial class MainWindow : Window
         {
             var (outputLog, outputErrorLog) = SendPullRequestCommand(selectedDeploymentEnvironmentTarget, deploymentApplication);
 
-            deploymentLogSb.AppendLine(deploymentApplication.Name);
-            deploymentLogSb.AppendLine($"PR URL? - {outputLog}");
-            deploymentLogSb.AppendLine($"Errors? - {outputErrorLog}");
-            deploymentLogSb.AppendLine();
+            if (!string.IsNullOrEmpty(outputLog))
+            {
+                deploymentLogSb.AppendLine(deploymentApplication.Name);
+                deploymentLogSb.AppendLine(outputLog);
+            }
+
+            if (!string.IsNullOrEmpty(outputErrorLog))
+            {
+                deploymentErrorLogSb.AppendLine(deploymentApplication.Name);
+                deploymentErrorLogSb.AppendLine(outputErrorLog);
+            }
         }
 
         TbLog.Text = deploymentLogSb.ToString();
+        TbError.Text = deploymentErrorLogSb.ToString();
     }
 
     private (string, string) SendPullRequestCommand(DeploymentEnvironmentTarget target, DeploymentApplication application)
     {
-        var previewTextCommandSuffix = previewPullRequests ? "--web" : string.Empty;
+        var previewTextCommandSuffix = PreviewPullRequests ? "--web" : string.Empty;
 
         var commandText = target switch
         {
@@ -112,15 +155,8 @@ public partial class MainWindow : Window
             UseShellExecute = false
         };
 
-        if (!EnvironmentVariablesContainsGithubAuthToken(processStartInfo))
-        {
-            processStartInfo.EnvironmentVariables.Add("GH_TOKEN", githubToken);
-        }
+        processStartInfo.EnvironmentVariables.Add("GH_TOKEN", githubToken);
 
         return processStartInfo;
-
-        static bool EnvironmentVariablesContainsGithubAuthToken(ProcessStartInfo startInfo) =>
-            startInfo.EnvironmentVariables.ContainsKey("GH_TOKEN") ||
-            startInfo.EnvironmentVariables.ContainsKey("GITHUB_TOKEN");
     }
 }

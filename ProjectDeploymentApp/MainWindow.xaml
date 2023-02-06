@@ -5,27 +5,38 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ProjectDeploymentApp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="500">
+        DataContext="{Binding RelativeSource={RelativeSource Self}}"
+    Title="MainWindow" Height="500" Width="800" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <StackPanel Margin="10">
+        <StackPanel Grid.Row="0" Grid.Column="0" Margin="10">
+            <Label>Deployment Settings</Label>
+            <StackPanel Orientation="Horizontal" Margin="0,3">
+                <Label>Github Token:</Label>
+                <Label Name="LblGithubTokenStatus">Unset</Label>
+            </StackPanel>
+            <CheckBox Name="CbUsePreview" Content="Preview Pull Requests before creating" IsChecked="{Binding PreviewPullRequests}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Grid.Column="0" Margin="10">
             <Label>Select deployment target:</Label>
             <ComboBox Name="CbDeploymentEnvironmentTarget"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Margin="10">
+        <StackPanel Grid.Row="2" Grid.Column="0" Margin="10">
             <Label>Select applications to deploy:</Label>
-            <ListBox Name="LbApplications">
+            <ListBox Name="LbApplications" ItemsSource="{Binding DeploymentApplications, Mode=OneTime}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <ListBoxItem>
@@ -36,13 +47,15 @@
             </ListBox>
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Margin="10">
+        <StackPanel Grid.Row="3" Grid.Column="0" Margin="10">
             <Button Name="BtnCreatePullRequests" Content="Create Pull Requests" Click="BtnCreatePullRequests_OnClick"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="3" Margin="10,20">
-            <Separator />
-            <TextBox Name="TbLog" IsReadOnly="True" MaxLines="50" MinHeight="300" />
+        <StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Margin="10">
+            <Label>Pull Request URLs</Label>
+            <TextBox Name="TbLog" IsReadOnly="True" MaxLines="50" MinHeight="150" />
+            <Label>Errors</Label>
+            <TextBox Name="TbError" IsReadOnly="True" MaxLines="50" MinHeight="150" />
         </StackPanel>
     </Grid>
 </Window>
