@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
@@ -17,8 +15,8 @@ namespace ProjectDeploymentApp;
 public partial class MainWindow : Window
 {
     private const string GitRootUrl = "https://github.com/euanmcmen-box/"; // "https://github.com/allocine/";
-    
-    public bool PreviewPullRequests { get; set; }
+
+    public bool PreviewPullRequests { get; set; } = true;
 
     public List<DeploymentApplication> DeploymentApplications { get; } = new();
 
@@ -29,8 +27,6 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         ReadFromConfiguration();
-
-        PreviewPullRequests = true;
 
         DeploymentApplications.AddRange(new List<DeploymentApplication>()
         {
