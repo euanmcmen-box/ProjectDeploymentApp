@@ -41,7 +41,6 @@ public partial class MainWindow : Window
 
         CbDeploymentEnvironmentTarget.ItemsSource = Enum.GetValues<DeploymentEnvironmentTarget>();
         CbDeploymentEnvironmentTarget.SelectedIndex = 0;
-
     }
 
     private void ReadFromConfiguration()
