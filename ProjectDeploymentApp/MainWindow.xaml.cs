@@ -32,10 +32,11 @@ public partial class MainWindow : Window
         DeploymentApplications.AddRange(new List<DeploymentApplication>()
         {
             new("Banshee", "gla-Banshee", "dev", "uat", "main"),
-            new("Boost", "gla-BoostTicketing", "dev", "uat", "master", false),
+            new("Boost", "gla-BoostTicketing", "dev", "uat", "master"),
             new("Cyclops", "gla-Cyclops", string.Empty, "uat", "main"),
-            new("Cypher", "gla-Cypher-API", "dev", "uat", "master", false),
+            new("Cypher", "gla-Cypher-API", "dev", "uat", "master"),
             new("Iceman", "gla-Iceman-API", "dev", "uat", "master"),
+            new("Legion", "gla-AppDotBoost-AzureFunctions", "dev", "uat", "master"),
             new("Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master")
         });
 
