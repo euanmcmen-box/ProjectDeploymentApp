@@ -14,11 +14,12 @@ namespace ProjectDeploymentApp;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private const string GitRootUrl = "https://github.com/euanmcmen-box/"; // "https://github.com/allocine/";
+    private const string GitRootUrl = "https://github.com/allocine/";
 
     public bool PreviewPullRequests { get; set; } = true;
 
     public List<DeploymentApplication> DeploymentApplications { get; } = new();
+
 
     private string githubToken = string.Empty;
 
@@ -30,12 +31,11 @@ public partial class MainWindow : Window
 
         DeploymentApplications.AddRange(new List<DeploymentApplication>()
         {
-            new("Hello Planet", "HelloPlanet", "feature/use-venus", "master", "master", true),
             new("Banshee", "gla-Banshee", "dev", "uat", "main"),
             new("Boost", "gla-BoostTicketing", "dev", "uat", "master", false),
             new("Cyclops", "gla-Cyclops", string.Empty, "uat", "main"),
             new("Cypher", "gla-Cypher-API", "dev", "uat", "master", false),
-            new("Iceman", "gla-Iceman", "dev", "uat", "master"),
+            new("Iceman", "gla-Iceman-API", "dev", "uat", "master"),
             new("Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master")
         });
 
