@@ -33,7 +33,7 @@ public partial class MainWindow : Window
         {
             new("Banshee", "gla-Banshee", "dev", "uat", "main"),
             new("Boost", "gla-BoostTicketing", "dev", "uat", "master"),
-            new("Cyclops", "gla-Cyclops", string.Empty, "uat", "main"),
+            new("Cyclops", "gla-Cyclops", "dev", "uat", "main"),
             new("Cypher", "gla-Cypher-API", "dev", "uat", "master"),
             new("Iceman", "gla-Iceman-API", "dev", "uat", "master"),
             new("Legion", "gla-AppDotBoost-AzureFunctions", "dev", "uat", "master"),
