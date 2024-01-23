@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Windows;
-using static System.Net.Mime.MediaTypeNames;
 // ReSharper disable InconsistentNaming
 
 namespace ProjectDeploymentApp;
@@ -31,14 +30,14 @@ public partial class MainWindow : Window
 
         DeploymentApplications.AddRange(new List<DeploymentApplication>()
         {
-            new("https://github.com/euanmcmen-box/", "HelloPlanet", "HelloPlanet", "develop", "master", ""),
-            new("https://github.com/allocine/", "Banshee", "gla-Banshee", "dev", "uat", "main"),
-            new("https://github.com/allocine/", "Boost", "gla-BoostTicketing", "dev", "uat", "master"),
-            new("https://github.com/allocine/", "Cyclops", "gla-Cyclops", "dev", "uat", "main"),
-            new("https://github.com/allocine/", "Cypher", "gla-Cypher-API", "dev", "uat", "master"),
-            new("https://github.com/allocine/", "Iceman", "gla-Iceman-API", "dev", "uat", "master"),
-            new("https://github.com/allocine/", "Legion", "gla-Legion", "dev", "uat", "master"),
-            new("https://github.com/allocine/", "Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master")
+            new("euanmcmen-box", "HelloPlanet", "HelloPlanet", "develop", "master", ""),
+            new("allocine", "Banshee", "gla-Banshee", "dev", "uat", "main"),
+            new("allocine", "Boost", "gla-BoostTicketing", "dev", "uat", "master"),
+            new("allocine", "Cyclops", "gla-Cyclops", "dev", "uat", "main"),
+            new("allocine", "Cypher", "gla-Cypher-API", "dev", "uat", "master"),
+            new("allocine", "Iceman", "gla-Iceman-API", "dev", "uat", "master"),
+            new("allocine", "Legion", "gla-Legion", "dev", "uat", "master"),
+            new("allocine", "Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master")
         });
 
         CbDeploymentEnvironmentTarget.ItemsSource = Enum.GetValues<DeploymentEnvironmentTarget>();
@@ -88,7 +87,8 @@ public partial class MainWindow : Window
         var deploymentLogSb = new StringBuilder();
         var deploymentErrorLogSb = new StringBuilder();
 
-        var selectedDeploymentEnvironmentTarget = (DeploymentEnvironmentTarget)CbDeploymentEnvironmentTarget.SelectedIndex;
+        var selectedDeploymentEnvironmentTarget =
+            (DeploymentEnvironmentTarget)CbDeploymentEnvironmentTarget.SelectedIndex;
 
         var selectedDeploymentApplications = DeploymentApplications
             .Where(x => x.IsSelected)
@@ -96,7 +96,8 @@ public partial class MainWindow : Window
 
         foreach (var deploymentApplication in selectedDeploymentApplications)
         {
-            var (outputLog, outputErrorLog) = SendPullRequestCommand(selectedDeploymentEnvironmentTarget, deploymentApplication);
+            var (outputLog, outputErrorLog) =
+                SendPullRequestCommand(selectedDeploymentEnvironmentTarget, deploymentApplication);
 
             if (!string.IsNullOrEmpty(outputLog))
             {
@@ -115,7 +116,8 @@ public partial class MainWindow : Window
         TbError.Text = deploymentErrorLogSb.ToString();
     }
 
-    private (string, string) SendPullRequestCommand(DeploymentEnvironmentTarget target, DeploymentApplication application)
+    private (string, string) SendPullRequestCommand(DeploymentEnvironmentTarget target,
+        DeploymentApplication application)
     {
         string sourceBranch, targetBranch, title;
 
@@ -143,10 +145,12 @@ public partial class MainWindow : Window
 
         if (UseBranchingStrategy)
         {
-            commands.AddRange(GetBranchingStrategyCommands(sourceBranch, targetBranch));
+            commands.AddRange(GetBranchingStrategyCommands(application, sourceBranch, targetBranch, title));
         }
-
-        commands.Add(GetCreatePullRequestCommandText(application, sourceBranch, targetBranch, title));
+        else
+        { 
+            commands.Add(GetCreatePullRequestCommandText(application, sourceBranch, targetBranch, title));
+        }
 
         var outputLogSb = new StringBuilder();
         var outputErrorLogSb = new StringBuilder();
@@ -161,26 +165,37 @@ public partial class MainWindow : Window
         return (outputLogSb.ToString(), outputErrorLogSb.ToString());
     }
 
-    private string GetCreatePullRequestCommandText(DeploymentApplication application, string sourceBranch, string targetBranch, string title)
+    private List<string> GetBranchingStrategyCommands(DeploymentApplication application, string sourceBranch,
+        string targetBranch, string title)
     {
-        var previewTextCommandSuffix = PreviewPullRequests ? "--web" : string.Empty;
-        return $"gh pr create --repo \"{application.RootUrl + application.RepositoryName}\" --head \"{sourceBranch}\" --base \"{targetBranch}\" --title \"{title}\" --body \"{title}\" {previewTextCommandSuffix}";
+        var mergeBranch = $"merge-to-{targetBranch}";
+
+        var result = new List<string>()
+        {
+            $@"cd C:/Users/euan.mcmenemin/source/repos/{application.RepositoryName} && " +
+            $"git stash && " +
+            $"git checkout {sourceBranch} && " +
+            $"git pull && " +
+            $"git checkout {targetBranch} && " +
+            $"git pull && " +
+            $"git checkout -b {mergeBranch} && " +
+            $"git merge {sourceBranch} && " +
+            $"git push --set-upstream origin {mergeBranch}",
+            GetCreatePullRequestCommandText(application, mergeBranch, targetBranch, title)
+        };
+
+        return result;
     }
 
-    private static IEnumerable<string> GetBranchingStrategyCommands(string sourceBranch, string targetBranch)
+    private string GetCreatePullRequestCommandText(DeploymentApplication application, string sourceBranch,
+        string targetBranch, string title)
     {
-        return new List<string>()
-        {
-            "git stash",
-            $"git checkout {sourceBranch}",
-            "git pull",
-            $"git checkout {targetBranch}",
-            "git pull",
-            $"git checkout -b merge-to-{targetBranch}",
-            $"git merge {sourceBranch}"
-        };
+        var previewTextCommandSuffix = PreviewPullRequests ? "--web" : string.Empty;
+        var url = $@"https://github.com/{application.RepositoryRootName}/{application.RepositoryName}";
+        return
+            $"gh pr create --repo \"{url}\" --head \"{sourceBranch}\" --base \"{targetBranch}\" --title \"{title}\" --body \"{title}\" {previewTextCommandSuffix}";
     }
-    
+
     /*
 
     git stash

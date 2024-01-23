@@ -2,7 +2,8 @@
 {
     public class DeploymentApplication
     {
-        public string RootUrl { get; set; }
+        public string RepositoryRootName { get; set; }
+
         public string Name { get; }
 
         public bool IsSelected { get; set; }
@@ -15,9 +16,9 @@
 
         public string LiveBranchName { get; }
 
-        public DeploymentApplication(string rootUrl, string name, string repositoryName, string devBranchName, string uatBranchName, string liveBranchName, bool isSelected = false)
+        public DeploymentApplication(string repositoryRootName, string name, string repositoryName, string devBranchName, string uatBranchName, string liveBranchName, bool isSelected = false)
         {
-            RootUrl = rootUrl;
+            RepositoryRootName = repositoryRootName;
             Name = name;
             RepositoryName = repositoryName;
             DevBranchName = devBranchName;
