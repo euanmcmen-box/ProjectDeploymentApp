@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using static System.Net.Mime.MediaTypeNames;
 // ReSharper disable InconsistentNaming
 
 namespace ProjectDeploymentApp;
@@ -14,12 +15,11 @@ namespace ProjectDeploymentApp;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private const string GitRootUrl = "https://github.com/allocine/";
-
     public bool PreviewPullRequests { get; set; } = true;
 
-    public List<DeploymentApplication> DeploymentApplications { get; } = new();
+    public bool UseBranchingStrategy { get; set; } = false;
 
+    public List<DeploymentApplication> DeploymentApplications { get; } = new();
 
     private string githubToken = string.Empty;
 
@@ -31,13 +31,14 @@ public partial class MainWindow : Window
 
         DeploymentApplications.AddRange(new List<DeploymentApplication>()
         {
-            new("Banshee", "gla-Banshee", "dev", "uat", "main"),
-            new("Boost", "gla-BoostTicketing", "dev", "uat", "master"),
-            new("Cyclops", "gla-Cyclops", "dev", "uat", "main"),
-            new("Cypher", "gla-Cypher-API", "dev", "uat", "master"),
-            new("Iceman", "gla-Iceman-API", "dev", "uat", "master"),
-            new("Legion", "gla-AppDotBoost-AzureFunctions", "dev", "uat", "master"),
-            new("Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master")
+            new("https://github.com/euanmcmen-box/", "HelloPlanet", "HelloPlanet", "develop", "master", ""),
+            new("https://github.com/allocine/", "Banshee", "gla-Banshee", "dev", "uat", "main"),
+            new("https://github.com/allocine/", "Boost", "gla-BoostTicketing", "dev", "uat", "master"),
+            new("https://github.com/allocine/", "Cyclops", "gla-Cyclops", "dev", "uat", "main"),
+            new("https://github.com/allocine/", "Cypher", "gla-Cypher-API", "dev", "uat", "master"),
+            new("https://github.com/allocine/", "Iceman", "gla-Iceman-API", "dev", "uat", "master"),
+            new("https://github.com/allocine/", "Legion", "gla-Legion", "dev", "uat", "master"),
+            new("https://github.com/allocine/", "Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master")
         });
 
         CbDeploymentEnvironmentTarget.ItemsSource = Enum.GetValues<DeploymentEnvironmentTarget>();
@@ -116,26 +117,96 @@ public partial class MainWindow : Window
 
     private (string, string) SendPullRequestCommand(DeploymentEnvironmentTarget target, DeploymentApplication application)
     {
-        var previewTextCommandSuffix = PreviewPullRequests ? "--web" : string.Empty;
+        string sourceBranch, targetBranch, title;
 
-        var commandText = target switch
+        switch (target)
         {
-            DeploymentEnvironmentTarget.Uat =>
-                $"gh pr create --repo \"{GitRootUrl + application.RepositoryName}\" --head \"{application.DevBranchName}\" --base \"{application.UatBranchName}\" --title \"deploy to uat\" --body \"deploy to uat\" {previewTextCommandSuffix}",
-            DeploymentEnvironmentTarget.Live =>
-                $"gh pr create --repo \"{GitRootUrl + application.RepositoryName}\" --head \"{application.UatBranchName}\" --base \"{application.LiveBranchName}\" --title \"deploy to live\" --body \"deploy to live\" {previewTextCommandSuffix}",
-            _ => throw new ArgumentOutOfRangeException(paramName: nameof(target))
+            case DeploymentEnvironmentTarget.Uat:
+            {
+                title = "deploy to uat";
+                sourceBranch = application.DevBranchName;
+                targetBranch = application.UatBranchName;
+                break;
+            }
+            case DeploymentEnvironmentTarget.Live:
+            {
+                title = "deploy to live";
+                sourceBranch = application.UatBranchName;
+                targetBranch = application.LiveBranchName;
+                break;
+            }
+            default:
+                throw new ArgumentOutOfRangeException(nameof(target), target, null);
+        }
+
+        var commands = new List<string>();
+
+        if (UseBranchingStrategy)
+        {
+            commands.AddRange(GetBranchingStrategyCommands(sourceBranch, targetBranch));
+        }
+
+        commands.Add(GetCreatePullRequestCommandText(application, sourceBranch, targetBranch, title));
+
+        var outputLogSb = new StringBuilder();
+        var outputErrorLogSb = new StringBuilder();
+
+        foreach (var command in commands)
+        {
+            var (outputLog, outputErrorLog) = SendCommand(command);
+            outputLogSb.AppendLine(outputLog);
+            outputErrorLogSb.AppendLine(outputErrorLog);
+        }
+
+        return (outputLogSb.ToString(), outputErrorLogSb.ToString());
+    }
+
+    private string GetCreatePullRequestCommandText(DeploymentApplication application, string sourceBranch, string targetBranch, string title)
+    {
+        var previewTextCommandSuffix = PreviewPullRequests ? "--web" : string.Empty;
+        return $"gh pr create --repo \"{application.RootUrl + application.RepositoryName}\" --head \"{sourceBranch}\" --base \"{targetBranch}\" --title \"{title}\" --body \"{title}\" {previewTextCommandSuffix}";
+    }
+
+    private static IEnumerable<string> GetBranchingStrategyCommands(string sourceBranch, string targetBranch)
+    {
+        return new List<string>()
+        {
+            "git stash",
+            $"git checkout {sourceBranch}",
+            "git pull",
+            $"git checkout {targetBranch}",
+            "git pull",
+            $"git checkout -b merge-to-{targetBranch}",
+            $"git merge {sourceBranch}"
         };
+    }
+    
+    /*
 
-        var process = new Process();
-        process.StartInfo = GetStartInfoForCommand(commandText);
-        process.Start();
-        process.WaitForExit();
+    git stash
 
-        var outputLog = process.StandardOutput.ReadToEnd();
-        var outputErrorLog = process.StandardError.ReadToEnd();
+    git checkout target
+    git pull
+    git checkout -b mergeSourceToTarget
+    git merge source
+    // create pr
+     
+    git stash pop
 
-        return (outputLog, outputErrorLog);
+     */
+
+    private (string, string) SendCommand(string commandText)
+    {
+        var commandProcess = new Process();
+        commandProcess.StartInfo = GetStartInfoForCommand(commandText);
+        commandProcess.Start();
+        commandProcess.WaitForExit();
+
+        var output = commandProcess.StandardOutput.ReadToEnd();
+
+        var errorOutput = commandProcess.StandardError.ReadToEnd();
+
+        return (output, errorOutput);
     }
 
     private ProcessStartInfo GetStartInfoForCommand(string commandText)

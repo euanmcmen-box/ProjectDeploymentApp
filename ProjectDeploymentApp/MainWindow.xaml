@@ -27,6 +27,7 @@
                 <Label Name="LblGithubTokenStatus">Unset</Label>
             </StackPanel>
             <CheckBox Content="Preview Pull Requests before creating" IsChecked="{Binding PreviewPullRequests}" />
+            <CheckBox Content="Use Branching Strategy" IsChecked="{Binding UseBranchingStrategy}" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="10">
