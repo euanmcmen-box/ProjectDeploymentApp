@@ -22,6 +22,8 @@ public partial class MainWindow : Window
 
     private string githubToken = string.Empty;
 
+    private const string projectDeploymentRootUrl = @"C:/Users/euan.mcmenemin/source/project-deployment-root";
+
     public MainWindow()
     {
         InitializeComponent();
@@ -172,7 +174,7 @@ public partial class MainWindow : Window
 
         var result = new List<string>()
         {
-            $@"cd C:/Users/euan.mcmenemin/source/repos/{application.RepositoryName} && " +
+            $@"cd {projectDeploymentRootUrl}/{application.RepositoryName} && " +
             $"git stash && " +
             $"git checkout {sourceBranch} && " +
             $"git pull && " +
@@ -195,20 +197,6 @@ public partial class MainWindow : Window
         return
             $"gh pr create --repo \"{url}\" --head \"{sourceBranch}\" --base \"{targetBranch}\" --title \"{title}\" --body \"{title}\" {previewTextCommandSuffix}";
     }
-
-    /*
-
-    git stash
-
-    git checkout target
-    git pull
-    git checkout -b mergeSourceToTarget
-    git merge source
-    // create pr
-     
-    git stash pop
-
-     */
 
     private (string, string) SendCommand(string commandText)
     {
