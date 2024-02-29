@@ -160,7 +160,6 @@ public partial class MainWindow : Window
 
         var refreshBranchesInstruction =
             $@"cd {projectDeploymentRootUrl}/{application.RepositoryName} && " +
-            $"git stash && " +
             $"git checkout {sourceBranch} && " +
             $"git pull && " +
             $"git checkout {targetBranch} && " +
