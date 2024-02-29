@@ -169,7 +169,7 @@ public partial class MainWindow : Window
             $"cd {projectDeploymentRootUrl}/{application.RepositoryName} && git checkout {mergeBranch} && git checkout {sourceBranch} && git branch -d {mergeBranch}";
 
         var createMergeBranchInstructions =
-            $"cd {projectDeploymentRootUrl}/{application.RepositoryName} && git checkout -b {mergeBranch} && git merge {sourceBranch} && git push --set-upstream origin {mergeBranch}";
+            $"cd {projectDeploymentRootUrl}/{application.RepositoryName} && git checkout {sourceBranch} && git checkout -b {mergeBranch} && git merge {sourceBranch} && git push --set-upstream origin {mergeBranch}";
 
         var createPrInstructions = GetCreatePullRequestCommandText(application, mergeBranch, targetBranch, title);
 
