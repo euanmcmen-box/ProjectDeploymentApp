@@ -18,6 +18,8 @@ public partial class MainWindow : Window
 
     public bool UseBranchingStrategy { get; set; } = false;
 
+    public bool ShouldUpdateBranchesOnly { get; set; } = false;
+
     public List<DeploymentApplication> DeploymentApplications { get; } = new();
 
     private string githubToken = string.Empty;
@@ -98,27 +100,21 @@ public partial class MainWindow : Window
 
         foreach (var deploymentApplication in selectedDeploymentApplications)
         {
-            var (outputLog, outputErrorLog) =
-                SendPullRequestCommand(selectedDeploymentEnvironmentTarget, deploymentApplication);
+            var commandsList = GetPullRequestCommands(selectedDeploymentEnvironmentTarget, deploymentApplication);
 
-            if (!string.IsNullOrEmpty(outputLog))
+            foreach (var command in commandsList)
             {
-                deploymentLogSb.AppendLine(deploymentApplication.Name);
+                var (outputLog, outputErrorLog) = SendCommand(command);
                 deploymentLogSb.AppendLine(outputLog);
-            }
-
-            if (!string.IsNullOrEmpty(outputErrorLog))
-            {
-                deploymentErrorLogSb.AppendLine(deploymentApplication.Name);
                 deploymentErrorLogSb.AppendLine(outputErrorLog);
+
+                TbLog.Text = deploymentLogSb.ToString();
+                TbError.Text = deploymentErrorLogSb.ToString();
             }
         }
-
-        TbLog.Text = deploymentLogSb.ToString();
-        TbError.Text = deploymentErrorLogSb.ToString();
     }
-
-    private (string, string) SendPullRequestCommand(DeploymentEnvironmentTarget target,
+    
+    private List<string> GetPullRequestCommands(DeploymentEnvironmentTarget target,
         DeploymentApplication application)
     {
         string sourceBranch, targetBranch, title;
@@ -143,28 +139,18 @@ public partial class MainWindow : Window
                 throw new ArgumentOutOfRangeException(nameof(target), target, null);
         }
 
-        var commands = new List<string>();
+        var commandLists = new List<string>();
 
         if (UseBranchingStrategy)
         {
-            commands.AddRange(GetBranchingStrategyCommands(application, sourceBranch, targetBranch, title));
+            commandLists.AddRange(GetBranchingStrategyCommands(application, sourceBranch, targetBranch, title));
         }
         else
-        { 
-            commands.Add(GetCreatePullRequestCommandText(application, sourceBranch, targetBranch, title));
-        }
-
-        var outputLogSb = new StringBuilder();
-        var outputErrorLogSb = new StringBuilder();
-
-        foreach (var command in commands)
         {
-            var (outputLog, outputErrorLog) = SendCommand(command);
-            outputLogSb.AppendLine(outputLog);
-            outputErrorLogSb.AppendLine(outputErrorLog);
+            commandLists.Add(GetCreatePullRequestCommandText(application, sourceBranch, targetBranch, title));
         }
 
-        return (outputLogSb.ToString(), outputErrorLogSb.ToString());
+        return commandLists;
     }
 
     private List<string> GetBranchingStrategyCommands(DeploymentApplication application, string sourceBranch,
@@ -172,20 +158,28 @@ public partial class MainWindow : Window
     {
         var mergeBranch = $"merge-to-{targetBranch}";
 
-        var result = new List<string>()
-        {
+        var refreshBranchesInstruction =
             $@"cd {projectDeploymentRootUrl}/{application.RepositoryName} && " +
             $"git stash && " +
             $"git checkout {sourceBranch} && " +
             $"git pull && " +
             $"git checkout {targetBranch} && " +
-            $"git pull && " +
-            $"git checkout -b {mergeBranch} && " +
-            $"git merge {sourceBranch} && " +
-            $"git push --set-upstream origin {mergeBranch}",
-            GetCreatePullRequestCommandText(application, mergeBranch, targetBranch, title)
-        };
+            $"git pull";
 
+        var deleteExistingMergeBranchInstructions =
+            $"git checkout {mergeBranch} && git checkout {sourceBranch} && git branch -d {mergeBranch}";
+
+        var createMergeBranchInstructions =
+            $"git checkout -b {mergeBranch} && git merge {sourceBranch} && git push --set-upstream origin {mergeBranch}";
+
+        var createPrInstructions = GetCreatePullRequestCommandText(application, mergeBranch, targetBranch, title);
+
+        var result = new List<string> { refreshBranchesInstruction, deleteExistingMergeBranchInstructions };
+
+        if (ShouldUpdateBranchesOnly) return result;
+
+        result.Add(createMergeBranchInstructions);
+        result.Add(createPrInstructions);
         return result;
     }
 

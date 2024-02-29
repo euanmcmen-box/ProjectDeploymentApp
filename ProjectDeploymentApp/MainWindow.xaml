@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ProjectDeploymentApp"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
-    Title="MainWindow" Height="500" Width="800" WindowStartupLocation="CenterScreen">
+    Title="MainWindow" Height="600" Width="800" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -27,7 +27,9 @@
                 <Label Name="LblGithubTokenStatus">Unset</Label>
             </StackPanel>
             <CheckBox Content="Preview Pull Requests before creating" IsChecked="{Binding PreviewPullRequests}" />
+            <Separator />
             <CheckBox Content="Use Branching Strategy" IsChecked="{Binding UseBranchingStrategy}" />
+            <CheckBox Content="- Update and Cleanup Branches Only (No PRs)" IsChecked="{Binding ShouldUpdateBranchesOnly}" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="10">
@@ -52,11 +54,13 @@
             <Button Name="BtnCreatePullRequests" Content="Create Pull Requests" Click="BtnCreatePullRequests_OnClick"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Margin="10">
+        <ScrollViewer Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Margin="10">
+            <StackPanel Margin="5">
             <Label>Pull Request URLs</Label>
-            <TextBox Name="TbLog" IsReadOnly="True" MaxLines="50" MinHeight="150" />
+            <TextBox Name="TbLog" IsReadOnly="True" MaxLines="200" MinHeight="220" />
             <Label>Errors</Label>
-            <TextBox Name="TbError" IsReadOnly="True" MaxLines="50" MinHeight="150" />
-        </StackPanel>
+            <TextBox Name="TbError" IsReadOnly="True" MaxLines="200" MinHeight="220" />
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>
