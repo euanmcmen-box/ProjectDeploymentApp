@@ -166,10 +166,10 @@ public partial class MainWindow : Window
             $"git pull";
 
         var deleteExistingMergeBranchInstructions =
-            $"git checkout {mergeBranch} && git checkout {sourceBranch} && git branch -d {mergeBranch}";
+            $"cd {projectDeploymentRootUrl}/{application.RepositoryName} && git checkout {mergeBranch} && git checkout {sourceBranch} && git branch -d {mergeBranch}";
 
         var createMergeBranchInstructions =
-            $"git checkout -b {mergeBranch} && git merge {sourceBranch} && git push --set-upstream origin {mergeBranch}";
+            $"cd {projectDeploymentRootUrl}/{application.RepositoryName} && git checkout -b {mergeBranch} && git merge {sourceBranch} && git push --set-upstream origin {mergeBranch}";
 
         var createPrInstructions = GetCreatePullRequestCommandText(application, mergeBranch, targetBranch, title);
 
