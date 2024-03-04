@@ -41,7 +41,9 @@ public partial class MainWindow : Window
             new("allocine", "Cypher", "gla-Cypher-API", "dev", "uat", "master"),
             new("allocine", "Iceman", "gla-Iceman-API", "dev", "uat", "master"),
             new("allocine", "Legion", "gla-Legion", "dev", "uat", "master"),
-            new("allocine", "Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master")
+            new("allocine", "Nightcrawler", "gla-Nightcrawler", "dev", "uat", "master"),
+            new("allocine", "Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master"),
+            new("allocine", "Sage", "gla-Sage", "dev", "uat", "main")
         });
 
         CbDeploymentEnvironmentTarget.ItemsSource = Enum.GetValues<DeploymentEnvironmentTarget>();
