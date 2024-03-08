@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ProjectDeploymentApp"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
-    Title="MainWindow" Height="600" Width="800" WindowStartupLocation="CenterScreen">
+    Title="MainWindow" Height="600" Width="1000" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -21,15 +21,20 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Row="0" Grid.Column="0" Margin="10">
-            <Label>Deployment Settings</Label>
+            <Label>Configuration Setting</Label>
             <StackPanel Orientation="Horizontal" Margin="0,3">
                 <Label>Github Token:</Label>
                 <Label Name="LblGithubTokenStatus">Unset</Label>
             </StackPanel>
-            <CheckBox Content="Preview Pull Requests before creating" IsChecked="{Binding PreviewPullRequests}" />
+            <StackPanel Orientation="Horizontal" Margin="0,3">
+                <Label>Repositories:</Label>
+                <Label Name="LblRepositoryStatus"></Label>
+                <Button Name="BtnInitialiseRepos" Content="Initialise Repos" Click="BtnInitialiseRepos_OnClick"/>
+            </StackPanel>
             <Separator />
-            <CheckBox Content="Use Branching Strategy" IsChecked="{Binding UseBranchingStrategy}" />
-            <CheckBox Content="- Update and Cleanup Branches Only (No PRs)" IsChecked="{Binding ShouldUpdateBranchesOnly}" />
+            <StackPanel>
+                <CheckBox Content="Update and Cleanup Branches Only (No PRs)" IsChecked="{Binding ShouldUpdateBranchesOnly}" />
+            </StackPanel>
         </StackPanel>
 
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="10">
@@ -51,16 +56,20 @@
         </StackPanel>
 
         <StackPanel Grid.Row="3" Grid.Column="0" Margin="10">
-            <Button Name="BtnCreatePullRequests" Content="Create Pull Requests" Click="BtnCreatePullRequests_OnClick"/>
+            <Button Name="BtnCreatePullRequests" Content="Create Pull Requests in Browser" Click="BtnCreatePullRequests_OnClick"/>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Margin="10">
-            <StackPanel Margin="5">
-            <Label>Pull Request URLs</Label>
-            <TextBox Name="TbLog" IsReadOnly="True" MaxLines="200" MinHeight="220" />
-            <Label>Errors</Label>
-            <TextBox Name="TbError" IsReadOnly="True" MaxLines="200" MinHeight="220" />
-            </StackPanel>
-        </ScrollViewer>
+        <DockPanel  Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Margin="10" LastChildFill="True">
+            <TextBox Name="TbApplicationLog" IsReadOnly="True" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" />
+        </DockPanel >
+
+        <!--<ScrollViewer Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Margin="10">-->
+            <!--<StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Margin="10">
+            <Label>Application Output</Label>
+            <TextBox Name="TbApplicationLog" IsReadOnly="True" VerticalScrollBarVisibility="Visible" MinHeight="220" MaxHeight="220" />
+            --><!--<Label>Git CLI Process Output</Label>
+            <TextBox Name="TbProcessOutput" IsReadOnly="True" VerticalScrollBarVisibility="Visible" MinHeight="220" MaxHeight="220" />--><!--
+            </StackPanel>-->
+        <!--</ScrollViewer>-->
     </Grid>
 </Window>

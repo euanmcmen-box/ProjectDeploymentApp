@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 // ReSharper disable InconsistentNaming
 
@@ -14,23 +16,27 @@ namespace ProjectDeploymentApp;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public bool PreviewPullRequests { get; set; } = true;
-
-    public bool UseBranchingStrategy { get; set; } = false;
-
     public bool ShouldUpdateBranchesOnly { get; set; } = false;
 
     public List<DeploymentApplication> DeploymentApplications { get; } = new();
 
+    public bool DirectoryStateValid { get; set; }
+
+    public StringBuilder AppLog { get; }
+
+    public StringBuilder ProcessLog { get; }
+
     private string githubToken = string.Empty;
-
-    private const string projectDeploymentRootUrl = @"C:/Users/euan.mcmenemin/source/project-deployment-root";
-
+    
     public MainWindow()
     {
         InitializeComponent();
 
-        ReadFromConfiguration();
+        CbDeploymentEnvironmentTarget.ItemsSource = Enum.GetValues<DeploymentEnvironmentTarget>();
+        CbDeploymentEnvironmentTarget.SelectedIndex = 0;
+
+        ProcessLog = new StringBuilder();
+        AppLog = new StringBuilder();
 
         DeploymentApplications.AddRange(new List<DeploymentApplication>()
         {
@@ -46,8 +52,11 @@ public partial class MainWindow : Window
             new("allocine", "Sage", "gla-Sage", "dev", "uat", "main")
         });
 
-        CbDeploymentEnvironmentTarget.ItemsSource = Enum.GetValues<DeploymentEnvironmentTarget>();
-        CbDeploymentEnvironmentTarget.SelectedIndex = 0;
+        ReadFromConfiguration();
+
+        CheckRepositories();
+
+        ConfigureButtons();
     }
 
     private void ReadFromConfiguration()
@@ -88,11 +97,38 @@ public partial class MainWindow : Window
         }
     }
 
-    private void BtnCreatePullRequests_OnClick(object sender, RoutedEventArgs e)
+    private void CheckRepositories()
     {
-        var deploymentLogSb = new StringBuilder();
-        var deploymentErrorLogSb = new StringBuilder();
+        if (!Directory.Exists($"{DirectoryConstants.GetDeploymentDirectoryPath()}"))
+        {
+            Directory.CreateDirectory(DirectoryConstants.GetDeploymentDirectoryPath());
+        }
 
+        DirectoryStateValid = true;
+
+        foreach (var deploymentApplication in DeploymentApplications)
+        {
+            if (!Directory.Exists($"{DirectoryConstants.GetDeploymentDirectoryPath()}/{deploymentApplication.RepositoryName}"))
+            {
+                WriteToApplicationLog(deploymentApplication, "Repository missing.  Run repository initialization.");
+                DirectoryStateValid = false;
+                continue;
+            }
+
+            WriteToApplicationLog(deploymentApplication, "OK.");
+        }
+
+        LblRepositoryStatus.Content = DirectoryStateValid ? "OK" : "ERROR";
+    }
+
+    private void ConfigureButtons()
+    {
+        BtnInitialiseRepos.IsEnabled = !string.IsNullOrEmpty(githubToken) && !DirectoryStateValid;
+        BtnCreatePullRequests.IsEnabled = !string.IsNullOrEmpty(githubToken) && DirectoryStateValid;
+    }
+
+    private async void BtnCreatePullRequests_OnClick(object sender, RoutedEventArgs e)
+    {
         var selectedDeploymentEnvironmentTarget =
             (DeploymentEnvironmentTarget)CbDeploymentEnvironmentTarget.SelectedIndex;
 
@@ -102,20 +138,50 @@ public partial class MainWindow : Window
 
         foreach (var deploymentApplication in selectedDeploymentApplications)
         {
+            WriteToApplicationLog(deploymentApplication, "Starting...");
+
             var commandsList = GetPullRequestCommands(selectedDeploymentEnvironmentTarget, deploymentApplication);
+
+            WriteToApplicationLog(deploymentApplication, "Commands created.  Executing...");
 
             foreach (var command in commandsList)
             {
-                var (outputLog, outputErrorLog) = SendCommand(command);
-                deploymentLogSb.AppendLine(outputLog);
-                deploymentErrorLogSb.AppendLine(outputErrorLog);
-
-                TbLog.Text = deploymentLogSb.ToString();
-                TbError.Text = deploymentErrorLogSb.ToString();
+                WriteToApplicationLog(deploymentApplication, $"Executing command: <<< {command} >>>");
+                await SendForegroundCommandAsync(command);
             }
+
+            WriteToApplicationLog(deploymentApplication, "Complete");
         }
     }
-    
+
+    private async void BtnInitialiseRepos_OnClick(object sender, RoutedEventArgs e)
+    {
+        foreach (var deploymentApplication in DeploymentApplications)
+        {
+            WriteToApplicationLog(deploymentApplication, "Cloning...");
+
+            if (Directory.Exists($"{DirectoryConstants.GetDeploymentDirectoryPath()}/{deploymentApplication.RepositoryName}"))
+            {
+                WriteToApplicationLog(deploymentApplication, "Directory exists.  Skipping repo initialization.");
+                continue;
+            }
+
+            await SendForegroundCommandAsync(GitHubCommands.GetCloneRepositoryInstruction(deploymentApplication));
+
+            WriteToApplicationLog(deploymentApplication, "Complete");
+        }
+
+        CheckRepositories();
+
+        ConfigureButtons();
+    }
+
+    private void WriteToApplicationLog(DeploymentApplication application, string message)
+    {
+        AppLog.AppendLine($"{application.Name} - {message}");
+        TbApplicationLog.Text = AppLog.ToString();
+    }
+
     private List<string> GetPullRequestCommands(DeploymentEnvironmentTarget target,
         DeploymentApplication application)
     {
@@ -142,15 +208,7 @@ public partial class MainWindow : Window
         }
 
         var commandLists = new List<string>();
-
-        if (UseBranchingStrategy)
-        {
-            commandLists.AddRange(GetBranchingStrategyCommands(application, sourceBranch, targetBranch, title));
-        }
-        else
-        {
-            commandLists.Add(GetCreatePullRequestCommandText(application, sourceBranch, targetBranch, title));
-        }
+        commandLists.AddRange(GetBranchingStrategyCommands(application, sourceBranch, targetBranch, title));
 
         return commandLists;
     }
@@ -160,68 +218,43 @@ public partial class MainWindow : Window
     {
         var mergeBranch = $"merge-to-{targetBranch}";
 
-        var refreshBranchesInstruction =
-            $@"cd {projectDeploymentRootUrl}/{application.RepositoryName} && " +
-            $"git checkout {sourceBranch} && " +
-            $"git pull && " +
-            $"git checkout {targetBranch} && " +
-            $"git pull";
+        var result = new List<string>
+        {
+            GitHubCommands.GetRefreshBranchesInstruction(application, sourceBranch, targetBranch),
+            GitHubCommands.GetDeleteMergeBranchIfExistsInstruction(application, sourceBranch, mergeBranch)
+        };
 
-        var deleteExistingMergeBranchInstructions =
-            $"cd {projectDeploymentRootUrl}/{application.RepositoryName} && git checkout {mergeBranch} && git checkout {sourceBranch} && git branch -d {mergeBranch}";
+        if (ShouldUpdateBranchesOnly)
+        {
+            return result;
+        }
 
-        var createMergeBranchInstructions =
-            $"cd {projectDeploymentRootUrl}/{application.RepositoryName} && git checkout {sourceBranch} && git checkout -b {mergeBranch} && git merge {sourceBranch} && git push --set-upstream origin {mergeBranch}";
-
-        var createPrInstructions = GetCreatePullRequestCommandText(application, mergeBranch, targetBranch, title);
-
-        var result = new List<string> { refreshBranchesInstruction, deleteExistingMergeBranchInstructions };
-
-        if (ShouldUpdateBranchesOnly) return result;
-
-        result.Add(createMergeBranchInstructions);
-        result.Add(createPrInstructions);
+        result.Add(GitHubCommands.GetCreateMergeBranchInstruction(application, sourceBranch, mergeBranch));
+        result.Add(GitHubCommands.GetCreatePullRequestCommandText(application, mergeBranch, targetBranch, title));
         return result;
     }
 
-    private string GetCreatePullRequestCommandText(DeploymentApplication application, string sourceBranch,
-        string targetBranch, string title)
-    {
-        var previewTextCommandSuffix = PreviewPullRequests ? "--web" : string.Empty;
-        var url = $@"https://github.com/{application.RepositoryRootName}/{application.RepositoryName}";
-        return
-            $"gh pr create --repo \"{url}\" --head \"{sourceBranch}\" --base \"{targetBranch}\" --title \"{title}\" --body \"{title}\" {previewTextCommandSuffix}";
-    }
+    //private async Task SendBackgroundCommandAsync(string commandText)
+    //{
+    //    var commandProcess = new Process();
+    //    commandProcess.StartInfo = ProcessStartInfoHelper.GetBackgroundCommandProcessStartInfo(githubToken, commandText);
+    //    commandProcess.Start();
 
-    private (string, string) SendCommand(string commandText)
+    //    await commandProcess.WaitForExitAsync();
+
+    //    var output = await commandProcess.StandardOutput.ReadToEndAsync();
+    //    var errorOutput = await commandProcess.StandardError.ReadToEndAsync();
+
+    //    ProcessLog.AppendLine(output);
+    //    ProcessLog.AppendLine(errorOutput);
+    //    TbProcessOutput.Text = ProcessLog.ToString();
+    //}
+
+    private async Task SendForegroundCommandAsync(string commandText)
     {
         var commandProcess = new Process();
-        commandProcess.StartInfo = GetStartInfoForCommand(commandText);
+        commandProcess.StartInfo = ProcessStartInfoHelper.GetForegroundCommandProcessStartInfo(githubToken, commandText);;
         commandProcess.Start();
-        commandProcess.WaitForExit();
-
-        var output = commandProcess.StandardOutput.ReadToEnd();
-
-        var errorOutput = commandProcess.StandardError.ReadToEnd();
-
-        return (output, errorOutput);
-    }
-
-    private ProcessStartInfo GetStartInfoForCommand(string commandText)
-    {
-        var processStartInfo = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = $"/C {commandText}",
-            WindowStyle = ProcessWindowStyle.Hidden,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-            UseShellExecute = false
-        };
-
-        processStartInfo.EnvironmentVariables.Add("GH_TOKEN", githubToken);
-
-        return processStartInfo;
+        await commandProcess.WaitForExitAsync();
     }
 }
