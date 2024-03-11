@@ -21,7 +21,7 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Row="0" Grid.Column="0" Margin="10">
-            <Label>Configuration Setting</Label>
+            <Label>Application Setup</Label>
             <StackPanel Orientation="Horizontal" Margin="0,3">
                 <Label>Github Token:</Label>
                 <Label Name="LblGithubTokenStatus">Unset</Label>
@@ -30,10 +30,6 @@
                 <Label>Repositories:</Label>
                 <Label Name="LblRepositoryStatus"></Label>
                 <Button Name="BtnInitialiseRepos" Content="Initialise Repos" Click="BtnInitialiseRepos_OnClick"/>
-            </StackPanel>
-            <Separator />
-            <StackPanel>
-                <CheckBox Content="Update and Cleanup Branches Only (No PRs)" IsChecked="{Binding ShouldUpdateBranchesOnly}" />
             </StackPanel>
         </StackPanel>
 
