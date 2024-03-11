@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ProjectDeploymentApp;
+﻿namespace PDACore;
 
 public class DirectoryConstants
 {

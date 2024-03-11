@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using PDACore;
+
 // ReSharper disable InconsistentNaming
 
 namespace ProjectDeploymentApp;
@@ -38,19 +40,7 @@ public partial class MainWindow : Window
         ProcessLog = new StringBuilder();
         AppLog = new StringBuilder();
 
-        DeploymentApplications.AddRange(new List<DeploymentApplication>()
-        {
-            new("euanmcmen-box", "HelloPlanet", "HelloPlanet", "develop", "master", ""),
-            new("allocine", "Banshee", "gla-Banshee", "dev", "uat", "main"),
-            new("allocine", "Boost", "gla-BoostTicketing", "dev", "uat", "master"),
-            new("allocine", "Cyclops", "gla-Cyclops", "dev", "uat", "main"),
-            new("allocine", "Cypher", "gla-Cypher-API", "dev", "uat", "master"),
-            new("allocine", "Iceman", "gla-Iceman-API", "dev", "uat", "master"),
-            new("allocine", "Legion", "gla-Legion", "dev", "uat", "master"),
-            new("allocine", "Nightcrawler", "gla-Nightcrawler", "dev", "uat", "master"),
-            new("allocine", "Quicksilver", "gla-Quicksilver-API", "dev", "uat", "master"),
-            new("allocine", "Sage", "gla-Sage", "dev", "uat", "main")
-        });
+        DeploymentApplications.AddRange(DeploymentApplicationsHelper.GetDeploymentApplications());
 
         ReadFromConfiguration();
 
@@ -99,11 +89,6 @@ public partial class MainWindow : Window
 
     private void CheckRepositories()
     {
-        if (!Directory.Exists($"{DirectoryConstants.GetDeploymentDirectoryPath()}"))
-        {
-            Directory.CreateDirectory(DirectoryConstants.GetDeploymentDirectoryPath());
-        }
-
         DirectoryStateValid = true;
 
         foreach (var deploymentApplication in DeploymentApplications)
@@ -156,6 +141,11 @@ public partial class MainWindow : Window
 
     private async void BtnInitialiseRepos_OnClick(object sender, RoutedEventArgs e)
     {
+        if (!Directory.Exists($"{DirectoryConstants.GetDeploymentDirectoryPath()}"))
+        {
+            Directory.CreateDirectory(DirectoryConstants.GetDeploymentDirectoryPath());
+        }
+
         foreach (var deploymentApplication in DeploymentApplications)
         {
             WriteToApplicationLog(deploymentApplication, "Cloning...");

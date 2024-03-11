@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace ProjectDeploymentApp;
+namespace PDACore;
 
 public static class ProcessStartInfoHelper
 {
