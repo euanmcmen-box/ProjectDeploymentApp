@@ -6,7 +6,6 @@ public static class DeploymentApplicationsHelper
     {
         return new List<DeploymentApplication>()
         {
-            new("euanmcmen-box", "HelloPlanet", "HelloPlanet", "develop", "master", ""),
             new("allocine", "Banshee", "gla-Banshee", "dev", "uat", "main"),
             new("allocine", "Boost", "gla-BoostTicketing", "dev", "uat", "master"),
             new("allocine", "Cyclops", "gla-Cyclops", "dev", "uat", "main"),

@@ -27,10 +27,14 @@ public partial class MainWindow : Window
     public StringBuilder ProcessLog { get; }
 
     private string githubToken = string.Empty;
-    
+
+    private readonly string deploymentProjectsRootPath;
+
     public MainWindow()
     {
         InitializeComponent();
+
+        deploymentProjectsRootPath = $"{Environment.CurrentDirectory}/apps/";
 
         CbDeploymentEnvironmentTarget.ItemsSource = Enum.GetValues<DeploymentEnvironmentTarget>();
         CbDeploymentEnvironmentTarget.SelectedIndex = 0;
@@ -40,14 +44,14 @@ public partial class MainWindow : Window
 
         DeploymentApplications.AddRange(DeploymentApplicationsHelper.GetDeploymentApplications());
 
-        ReadFromConfiguration();
+        ReadGithubTokenFromConfiguration();
 
         CheckRepositories();
 
         ConfigureButtons();
     }
 
-    private void ReadFromConfiguration()
+    private void ReadGithubTokenFromConfiguration()
     {
         TrySetFromEnvironmentVariables();
 
@@ -91,7 +95,7 @@ public partial class MainWindow : Window
 
         foreach (var deploymentApplication in DeploymentApplications)
         {
-            if (!Directory.Exists($"{DirectoryConstants.GetDeploymentDirectoryPath()}/{deploymentApplication.RepositoryName}"))
+            if (!Directory.Exists($"{deploymentProjectsRootPath}/{deploymentApplication.RepositoryName}"))
             {
                 WriteToApplicationLog(deploymentApplication, "Repository missing.  Run repository initialization.");
                 DirectoryStateValid = false;
@@ -115,6 +119,12 @@ public partial class MainWindow : Window
         var selectedDeploymentEnvironmentTarget =
             (DeploymentEnvironmentTarget)CbDeploymentEnvironmentTarget.SelectedIndex;
 
+        var deploymentContext = new DeploymentContext()
+        {
+            DeploymentApplicationsRoot = deploymentProjectsRootPath,
+            DeploymentTarget = selectedDeploymentEnvironmentTarget
+        };
+
         var selectedDeploymentApplications = DeploymentApplications
             .Where(x => x.IsSelected)
             .ToList();
@@ -123,21 +133,12 @@ public partial class MainWindow : Window
         {
             WriteToApplicationLog(deploymentApplication, "Starting...");
 
-            var (sourceBranch, targetBranch, prTitle) = selectedDeploymentEnvironmentTarget switch
-            {
-                DeploymentEnvironmentTarget.Uat => (deploymentApplication.DevBranchName, deploymentApplication.UatBranchName, "deploy to uat"),
-                DeploymentEnvironmentTarget.Live => (deploymentApplication.UatBranchName, deploymentApplication.LiveBranchName,"deploy to live"),
-                _ => throw new ArgumentOutOfRangeException(nameof(selectedDeploymentEnvironmentTarget), selectedDeploymentEnvironmentTarget, null)
-            };
-
-            var mergeBranch = $"merge-to-{targetBranch}";
-
             var commandsList = new List<string>
             {
-                GitHubCommands.GetRefreshBranchesInstruction(deploymentApplication, sourceBranch, targetBranch),
-                GitHubCommands.GetDeleteMergeBranchIfExistsInstruction(deploymentApplication, sourceBranch, mergeBranch),
-                GitHubCommands.GetCreateMergeBranchInstruction(deploymentApplication, sourceBranch, mergeBranch),
-                GitHubCommands.GetCreatePullRequestCommandText(deploymentApplication, mergeBranch, targetBranch, prTitle)
+                GitHubCommands.GetRefreshBranchesInstruction(deploymentContext, deploymentApplication),
+                GitHubCommands.GetDeleteMergeBranchIfExistsInstruction(deploymentContext, deploymentApplication),
+                GitHubCommands.GetCreateMergeBranchInstruction(deploymentContext, deploymentApplication),
+                GitHubCommands.GetCreatePullRequestCommandText(deploymentContext, deploymentApplication)
             };
 
             WriteToApplicationLog(deploymentApplication, "Commands created.  Executing...");
@@ -154,22 +155,22 @@ public partial class MainWindow : Window
 
     private async void BtnInitialiseRepos_OnClick(object sender, RoutedEventArgs e)
     {
-        if (!Directory.Exists($"{DirectoryConstants.GetDeploymentDirectoryPath()}"))
+        if (!Directory.Exists($"{deploymentProjectsRootPath}"))
         {
-            Directory.CreateDirectory(DirectoryConstants.GetDeploymentDirectoryPath());
+            Directory.CreateDirectory(deploymentProjectsRootPath);
         }
 
         foreach (var deploymentApplication in DeploymentApplications)
         {
             WriteToApplicationLog(deploymentApplication, "Cloning...");
 
-            if (Directory.Exists($"{DirectoryConstants.GetDeploymentDirectoryPath()}/{deploymentApplication.RepositoryName}"))
+            if (Directory.Exists($"{deploymentProjectsRootPath}/{deploymentApplication.RepositoryName}"))
             {
                 WriteToApplicationLog(deploymentApplication, "Directory exists.  Skipping repo initialization.");
                 continue;
             }
 
-            await SendForegroundCommandAsync(GitHubCommands.GetCloneRepositoryInstruction(deploymentApplication));
+            await SendForegroundCommandAsync(GitHubCommands.GetCloneRepositoryInstruction(deploymentProjectsRootPath, deploymentApplication));
 
             WriteToApplicationLog(deploymentApplication, "Complete");
         }
