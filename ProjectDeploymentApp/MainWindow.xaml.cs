@@ -116,18 +116,7 @@ public partial class MainWindow : Window
 
     private async void BtnCreatePullRequests_OnClick(object sender, RoutedEventArgs e)
     {
-        var selectedDeploymentEnvironmentTarget =
-            (DeploymentEnvironmentTarget)CbDeploymentEnvironmentTarget.SelectedIndex;
-
-        var deploymentContext = new DeploymentContext()
-        {
-            DeploymentApplicationsRoot = deploymentProjectsRootPath,
-            DeploymentTarget = selectedDeploymentEnvironmentTarget
-        };
-
-        var selectedDeploymentApplications = DeploymentApplications
-            .Where(x => x.IsSelected)
-            .ToList();
+        var (deploymentContext, selectedDeploymentApplications) = GetDeploymentParameters();
 
         foreach (var deploymentApplication in selectedDeploymentApplications)
         {
@@ -141,15 +130,25 @@ public partial class MainWindow : Window
                 GitHubCommands.GetCreatePullRequestCommandText(deploymentContext, deploymentApplication)
             };
 
-            WriteToApplicationLog(deploymentApplication, "Commands created.  Executing...");
+            await RunCommandsAsync(deploymentApplication, commandsList);
+        }
+    }
 
-            foreach (var command in commandsList)
+    private async void  BtnCleanupBranches_OnClick(object sender, RoutedEventArgs e)
+    {
+        var (deploymentContext, selectedDeploymentApplications) = GetDeploymentParameters();
+
+        foreach (var deploymentApplication in selectedDeploymentApplications)
+        {
+            WriteToApplicationLog(deploymentApplication, "Cleaning up...");
+
+            var commandsList = new List<string>
             {
-                WriteToApplicationLog(deploymentApplication, $"Executing command: <<< {command} >>>");
-                await SendForegroundCommandAsync(command);
-            }
+                GitHubCommands.GetRefreshBranchesInstruction(deploymentContext, deploymentApplication),
+                GitHubCommands.GetDeleteMergeBranchIfExistsInstruction(deploymentContext, deploymentApplication),
+            };    
 
-            WriteToApplicationLog(deploymentApplication, "Complete");
+            await RunCommandsAsync(deploymentApplication, commandsList);
         }
     }
 
@@ -180,10 +179,36 @@ public partial class MainWindow : Window
         ConfigureButtons();
     }
 
+    private (DeploymentContext, List<DeploymentApplication>) GetDeploymentParameters()
+    {
+        var deploymentContext = new DeploymentContext()
+        {
+            DeploymentApplicationsRoot = deploymentProjectsRootPath,
+            DeploymentTarget = (DeploymentEnvironmentTarget)CbDeploymentEnvironmentTarget.SelectedIndex
+        };
+
+        var deploymentApplications = DeploymentApplications.Where(x => x.IsSelected).ToList();
+
+        return (deploymentContext, deploymentApplications);
+    }
+
     private void WriteToApplicationLog(DeploymentApplication application, string message)
     {
         AppLog.AppendLine($"{application.Name} - {message}");
         TbApplicationLog.Text = AppLog.ToString();
+    }
+
+    private async Task RunCommandsAsync(DeploymentApplication deploymentApplication, List<string> commandsList)
+    {
+        WriteToApplicationLog(deploymentApplication, "Commands created.  Executing...");
+
+        foreach (var command in commandsList)
+        {
+            WriteToApplicationLog(deploymentApplication, $"Executing command: <<< {command} >>>");
+            await SendForegroundCommandAsync(command);
+        }
+
+        WriteToApplicationLog(deploymentApplication, "Complete");
     }
 
     //private async Task SendBackgroundCommandAsync(string commandText)
