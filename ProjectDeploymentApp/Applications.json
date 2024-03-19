@@ -1,0 +1,74 @@
+[
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Banshee",
+    "RepositoryName": "gla-Banshee",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "main"
+  },
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Boost",
+    "RepositoryName": "gla-BoostTicketing",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "master"
+  },
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Cyclops",
+    "RepositoryName": "gla-Cyclops",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "main"
+  },
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Cypher",
+    "RepositoryName": "gla-Cypher-API",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "master"
+  },
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Iceman",
+    "RepositoryName": "gla-Iceman-API",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "master"
+  },
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Legion",
+    "RepositoryName": "gla-Legion",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "master"
+  },
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Nightcrawler",
+    "RepositoryName": "gla-Nightcrawler",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "master"
+  },
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Quicksilver",
+    "RepositoryName": "gla-Quicksilver-API",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "master"
+  },
+  {
+    "RepositoryRootName": "allocine",
+    "Name": "Sage",
+    "RepositoryName": "gla-Sage",
+    "DevBranchName": "dev",
+    "UatBranchName": "uat",
+    "LiveBranchName": "main"
+  }
+]

@@ -11,4 +11,10 @@
     <ProjectReference Include="..\PDACore\PDACore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Applications.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

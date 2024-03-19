@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -42,13 +44,28 @@ public partial class MainWindow : Window
         ProcessLog = new StringBuilder();
         AppLog = new StringBuilder();
 
-        DeploymentApplications.AddRange(DeploymentApplicationsHelper.GetDeploymentApplications());
+        ReadDeploymentApplications();
 
         ReadGithubTokenFromConfiguration();
 
         CheckRepositories();
 
         ConfigureButtons();
+    }
+
+    private void ReadDeploymentApplications()
+    {
+        var applications = JsonSerializer.Deserialize<List<DeploymentApplication>>( File.ReadAllText("Applications.json"));
+
+        if (applications == null)
+        {
+            LblApplicationStatus.Content = "ERROR";
+        }
+        else
+        {
+            DeploymentApplications.AddRange(applications);
+            LblApplicationStatus.Content = "OK";
+        }
     }
 
     private void ReadGithubTokenFromConfiguration()
@@ -69,7 +86,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        LblGithubTokenStatus.Content = "NOT SET";
+        LblGithubTokenStatus.Content = "ERROR";
 
         void TrySetFromEnvironmentVariables()
         {
@@ -102,7 +119,7 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            WriteToApplicationLog(deploymentApplication, "OK.");
+            WriteToApplicationLog(deploymentApplication, "OK");
         }
 
         LblRepositoryStatus.Content = DirectoryStateValid ? "OK" : "ERROR";
