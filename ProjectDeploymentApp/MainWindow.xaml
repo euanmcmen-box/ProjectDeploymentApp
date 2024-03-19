@@ -20,7 +20,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="0" Grid.Column="0" Margin="5">
+        <StackPanel Grid.Row="0" Grid.Column="0" Margin="10">
             <Label>Application Setup</Label>
             <StackPanel Orientation="Horizontal">
                 <Label>Github Token:</Label>
@@ -38,7 +38,7 @@
             <Separator />
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,10">
+        <StackPanel Grid.Row="1" Grid.Column="0" Margin="10">
             <Label>1 - Select deployment target:</Label>
             <ComboBox Name="CbDeploymentEnvironmentTarget"/>
         </StackPanel>
@@ -58,12 +58,12 @@
 
         <StackPanel Grid.Row="3" Grid.Column="0" Margin="10">
             <Label>3 - Create PRs for selected applications:</Label>
-            <Button Name="BtnCreatePullRequests" Content="Create PRs" Click="BtnCreatePullRequests_OnClick" Width="100" HorizontalAlignment="Left"/>
+            <Button Name="BtnCreatePullRequests" Content="Create PRs" Click="BtnCreatePullRequests_OnClick" Width="150" HorizontalAlignment="Right"/>
         </StackPanel>
 
         <StackPanel Grid.Row="4" Grid.Column="0" Margin="10">
             <Label>4 - Delete Unmerged 'merge-to-' branches:</Label>
-            <Button Name="BtnCleanupBranches" Content="Clean up" Click="BtnCleanupBranches_OnClick" Width="100" HorizontalAlignment="Left"/>
+            <Button Name="BtnCleanupBranches" Content="Clean up" Click="BtnCleanupBranches_OnClick" Width="150" HorizontalAlignment="Right"/>
         </StackPanel>
 
         <DockPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="5" Margin="10" LastChildFill="True">

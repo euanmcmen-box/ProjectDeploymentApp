@@ -129,6 +129,7 @@ public partial class MainWindow : Window
     {
         BtnInitialiseRepos.IsEnabled = !string.IsNullOrEmpty(githubToken) && !DirectoryStateValid;
         BtnCreatePullRequests.IsEnabled = !string.IsNullOrEmpty(githubToken) && DirectoryStateValid;
+        BtnCleanupBranches.IsEnabled = !string.IsNullOrEmpty(githubToken) && DirectoryStateValid;
     }
 
     private async void BtnCreatePullRequests_OnClick(object sender, RoutedEventArgs e)
