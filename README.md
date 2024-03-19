@@ -1,6 +1,10 @@
 # ProjectDeploymentApp
 The "Project Deployment App" creates pull requests to UAT or Live for a selection of applications.
 
+> [!TIP]
+> Run the application as close to the root drive as possible.  For example, I run the application from the following root path: "C:\pda\ProjectDeploymentApp.exe"
+>This avoids any issues with long file names.
+
 ## Pre-requisite Installation
 
 ### Installing Github CLI
@@ -10,10 +14,6 @@ The application uses the [Github CLI](https://cli.github.com/) to create pull re
 More installation information for Github CLI:
 
 https://github.com/cli/cli#installation
-
-> [!TIP]
-> Run the application as close to the root drive as possible.  For example, I run the application from the following root path: "C:\pda\ProjectDeploymentApp.exe"
->This avoids any issues with long file names.
 
 ## Configuration
 
@@ -68,12 +68,12 @@ Press this button to delete all "merge-to" branches for all selected projects.
 
 ### First Launch of the Application
 
-![First Launch 1](images/Project%20Deployment%20App%20-%20First%20Run%20-%201.png)
+![First Launch 1](Images/Project%20Deployment%20App%20-%20First%20Run%20-%201.png)
 
 ### First Launch after running Repository Initialisation
 
-![First Launch 2](images/Project%20Deployment%20App%20-%20First%20Run%20-%202.png)
+![First Launch 2](Images/Project%20Deployment%20App%20-%20First%20Run%20-%202.png)
 
 ### Subsequent Launches and Normal Operation
 
-![Normal Operation](images/Project%20Deployment%20App%20Ready.png)
+![Normal Operation](Images/Project%20Deployment%20App%20Ready.png)
