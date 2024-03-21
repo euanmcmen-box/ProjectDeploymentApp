@@ -1,6 +1,12 @@
 # ProjectDeploymentApp
 The "Project Deployment App" creates pull requests to UAT or Live for a selection of applications.
 
+The application is a WPF desktop application, requires some setup, and uses the command line and file system.
+
+## Getting Started
+
+The application files are in the "pda.zip" zipped folder.  Download the file or clone the repo, and extract the files.  The "ProjectDeploymentApp.exe" application is the executable and entry-point.
+
 > [!TIP]
 > Run the application as close to the root drive as possible.  For example, I run the application from the following root path: "C:\pda\ProjectDeploymentApp.exe"
 >This avoids any issues with long file names.
